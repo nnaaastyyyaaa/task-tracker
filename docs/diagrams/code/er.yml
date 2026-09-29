@@ -1,0 +1,46 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "USER" as usr {
+  * id : uuid <<PK>>
+  --
+  * name : string
+  * email : string
+  * password_hash : string
+  * role : string
+}
+
+entity "PROJECT" as prj {
+  * id : uuid <<PK>>
+  --
+  * name : string
+  description : string
+  * owner_id : uuid <<FK>>
+}
+
+entity "PROJECT_MEMBER" as mem {
+  * project_id : uuid <<PK, FK>>
+  * user_id : uuid <<PK, FK>>
+  role : string
+}
+
+entity "TASK" as tsk {
+  * id : uuid <<PK>>
+  --
+  * project_id : uuid <<FK>>
+  * title : string
+  description : string
+  * assignee_id : uuid <<FK>>
+  * priority : string
+  * status : string
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+
+usr ||--o{ mem 
+prj ||--|{ mem 
+prj ||--|{ tsk
+usr ||--o{ tsk
+@enduml

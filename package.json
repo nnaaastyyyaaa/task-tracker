@@ -1,0 +1,41 @@
+{
+  "name": "task-tracker",
+  "version": "1.0.0",
+  "description": "Application for handling your tasks",
+  "keywords": [],
+  "homepage": "https://github.com/nnaaastyyyaaa/task-tracker#readme",
+  "bugs": {
+    "url": "https://github.com/nnaaastyyyaaa/task-tracker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nnaaastyyyaaa/task-tracker.git"
+  },
+  "license": "MIT",
+  "author": "Anastasiia Andriienko",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint . --ext .js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "start": "node ./src/server.js",
+    "build": "node --check ./src/server.js",
+    "check": "npm run format:check && npm run lint && npm run test && npm run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "prettier": "^3.9.9"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0",
+    "fastify": "^5.12.5",
+    "prisma": "^8.0.0-rc.19",
+    "vitest": "^5.0.2"
+  }
+}

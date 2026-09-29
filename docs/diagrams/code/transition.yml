@@ -1,0 +1,9 @@
+@startuml
+[*] --> TODO
+TODO --> IN_PROGRESS
+IN_PROGRESS --> TODO
+IN_PROGRESS --> REVIEW
+REVIEW --> IN_PROGRESS
+REVIEW --> DONE
+DONE --> REVIEW
+@enduml

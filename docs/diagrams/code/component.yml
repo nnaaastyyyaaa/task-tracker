@@ -1,0 +1,68 @@
+@startuml
+
+top to bottom direction
+
+component "C-01 Фронтенд" as C01
+
+package "Сервер (Node.js, src/server.js)" {
+
+  package "C-02 Користувач (user module)" as M02 {
+    component "UserController" as UserController
+    component "UserService" as UserService
+    component "UserRepository" as UserRepository
+  }
+
+  package "C-03 Проєкт (project module)" as M03 {
+    component "ProjectController" as ProjectController
+    component "ProjectService" as ProjectService
+    component "ProjectRepository" as ProjectRepository
+  }
+
+  package "C-04 Команда (team module)" as M04 {
+    component "TeamController" as TeamController
+    component "TeamService" as TeamService
+    component "TeamRepository" as TeamRepository
+  }
+
+  package "C-05 Завдання (task module)" as M05 {
+    component "TaskController" as TaskController
+    component "TaskService" as TaskService
+    component "TaskRepository" as TaskRepository
+  }
+}
+
+database "C-06 База даних" as C06
+
+' Фронтенд -> контролери
+C01 --> UserController : HTTP/JSON
+C01 --> ProjectController : HTTP/JSON
+C01 --> TeamController : HTTP/JSON
+C01 --> TaskController : HTTP/JSON
+
+' Шари всередині модулів
+UserController --> UserService
+UserService --> UserRepository
+
+ProjectController --> ProjectService
+ProjectService --> ProjectRepository
+
+TeamController --> TeamService
+TeamService --> TeamRepository
+
+TaskController --> TaskService
+TaskService --> TaskRepository
+
+' Взаємодія між модулями (лише через сервіси)
+ProjectService <--> TeamService : доступ і склад команди
+TeamService --> UserService : пошук користувача
+TaskService --> UserService : ім'я виконавця
+TaskService --> ProjectService : власник проєкту
+TaskService --> TeamService : чи є учасником
+
+' Доступ до бази даних (лише через репозиторії)
+UserRepository --> C06
+ProjectRepository --> C06
+TeamRepository --> C06
+TaskRepository --> C06
+
+@enduml

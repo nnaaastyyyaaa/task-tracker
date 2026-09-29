@@ -1,0 +1,36 @@
+@startuml
+
+actor "C-02 Користувач" as C02
+participant "C-01 Фронтенд" as C01
+participant "C-05 Завдання" as C05
+participant "C-03 Проєкт" as C03
+participant "C-04 Команда" as C04
+database "C-06 База даних" as C06
+
+C01 -> C05 : POST /projects/{id}/tasks
+activate C05
+
+C05 -> C02 : хто виконує запит?
+activate C02
+C02 --> C05 : користувач і роль
+deactivate C02
+
+C05 -> C03 : чи є користувач власником проєкту?
+activate C03
+C03 --> C05 : так
+deactivate C03
+
+C05 -> C04 : чи є виконавець учасником проєкту?
+activate C04
+C04 --> C05 : так
+deactivate C04
+
+C05 -> C06 : додати задачу
+activate C06
+C06 --> C05 : збережено
+deactivate C06
+
+C05 --> C01 : 201, задача
+deactivate C05
+
+@enduml
