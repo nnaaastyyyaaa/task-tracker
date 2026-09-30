@@ -16,7 +16,6 @@ entity "PROJECT" as prj {
   --
   * name : string
   description : string
-  * owner_id : uuid <<FK>>
 }
 
 entity "PROJECT_MEMBER" as mem {
@@ -40,7 +39,7 @@ entity "TASK" as tsk {
 
 
 usr ||--o{ mem 
-prj ||--|{ mem 
+prj }|--|{ mem 
 prj ||--|{ tsk
 usr ||--o{ tsk
 @enduml
