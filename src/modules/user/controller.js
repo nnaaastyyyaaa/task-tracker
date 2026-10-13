@@ -9,7 +9,6 @@ export class UserController {
   };
 
   register = async (request, reply) => {
-    console.log('controller');
     const created = this.userService.register(request.body);
     this.sendResponse(reply, created.id, 201);
   };
@@ -19,7 +18,7 @@ export class UserController {
     reply.setCookie('sid', sid, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       path: '/',
       maxAge: SESSION_TTL / 1000,
     });

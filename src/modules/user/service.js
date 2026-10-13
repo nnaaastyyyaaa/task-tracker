@@ -13,7 +13,6 @@ export class UserService {
   }
 
   async register({ email, password, name, role }) {
-    console.log('service');
     if (
       !email ||
       email.trim() === '' ||
@@ -58,7 +57,6 @@ export class UserService {
     }
 
     const user = await this.userRepository.findByEmail(email.toLowerCase());
-    console.log(user, password);
     const ok = user && (await bcrypt.compare(password, user.passwordHash));
     if (!ok) throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
 

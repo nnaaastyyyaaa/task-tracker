@@ -2,11 +2,11 @@ export class Session {
   constructor({ id, userId, expiresAt }) {
     this.id = id;
     this.expiresAt = expiresAt;
-    this.puserId = userId;
+    this.userId = userId;
   }
 
   fromEntity(row) {
-    return new User({
+    return new Session({
       id: row.id,
       userId: row.userId,
       expiresAt: row.expiresAt,
