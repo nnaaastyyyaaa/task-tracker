@@ -109,10 +109,13 @@ CREATE TABLE projects (
   owner_id    integer NOT NULL REFERENCES users (id)
 );
 
-CREATE TABLE project_members (
+CREATE TYPE project_role_name AS ENUM ('owner', 'member');
+
+CREATE TABLE project_member (
   project_id integer NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   user_id    integer NOT NULL REFERENCES users (id),
-  PRIMARY KEY (project_id, user_id)
+  PRIMARY KEY (project_id, user_id),
+  role        project_role_name NOT NULL
 );
 CREATE INDEX project_members_user_idx ON project_members (user_id);
 

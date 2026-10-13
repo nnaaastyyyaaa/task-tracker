@@ -24,4 +24,13 @@ export class User {
       role: this.role,
     };
   }
+  toPublic() {
+    return {
+      id: this.id,
+      name: this.name,
+      email: this.email,
+      passwordHash: this.password_hash,
+      role: this.role,
+    };
+  }
 }

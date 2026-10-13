@@ -5,7 +5,10 @@ import cookie from '@fastify/cookie';
 
 import { CustomHandler } from './utils/errorHandler.js';
 import { userService, checkUser } from './container/user.js';
+import { projectService } from './container/project.js';
+
 import userRoutes from './routes/userRoutes.js';
+import projectRoutes from './routes/projectRoutes.js';
 
 export function app() {
   const fastify = Fastify({
@@ -24,6 +27,7 @@ export function app() {
     reply.send({ status: 'OK' });
   });
   fastify.register(userRoutes, { userService, checkUser });
+  fastify.register(projectRoutes, { projectService, checkUser });
 
   return fastify;
 }

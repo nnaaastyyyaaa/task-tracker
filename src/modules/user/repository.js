@@ -18,7 +18,7 @@ export class UserRepository {
   }
 
   async create(user) {
-    const row = { id: ++this.db.countUsers, ...user };
+    const row = { id: ++this.db.seq.users, ...user };
     this.db.users.set(row.id, row);
     return User.fromEntity(row);
   }

@@ -2,9 +2,8 @@ import { UserRepository } from '../modules/user/repository.js';
 import { SessionRepository } from '../modules/session/repository.js';
 import { UserService } from '../modules/user/service.js';
 import { createCheckUser } from '../utils/checkUser.js';
-import { db } from '../store/memory.js';
+import { database } from './db.js';
 
-const database = new db();
 const userRepository = new UserRepository(database);
 const sessionRepository = new SessionRepository(database);
 
