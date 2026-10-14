@@ -1,5 +1,5 @@
 import { UserRepository } from '../modules/user/repository.js';
-import { SessionRepository } from '../modules/session/repository.js';
+import { SessionRepository } from '../modules/user/sessionRepository.js';
 import { UserService } from '../modules/user/service.js';
 import { createCheckUser } from '../utils/checkUser.js';
 import { prisma } from '../db/prisma.js';

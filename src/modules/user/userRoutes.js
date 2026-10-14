@@ -1,4 +1,4 @@
-import { UserController } from '../modules/user/controller.js';
+import { UserController } from './controller.js';
 
 export default async function userRoutes(fastify, { userService, checkUser }) {
   const controller = new UserController({ userService });

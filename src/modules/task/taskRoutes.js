@@ -1,4 +1,4 @@
-import { TaskController } from '../modules/task/controller.js';
+import { TaskController } from './controller.js';
 
 export default async function taskRoutes(fastify, { taskService, checkUser }) {
   const controller = new TaskController({ taskService });

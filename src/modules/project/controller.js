@@ -19,13 +19,4 @@ export class ProjectController {
 
   getOne = async (request) =>
     this.projectService.getById(request.user, Number(request.params.projectId));
-
-  addMember = async (request, reply) => {
-    const members = await this.projectService.addMember({
-      currentUser: request.user,
-      projectId: Number(request.params.projectId),
-      email: request.body?.email,
-    });
-    return reply.code(201).send(members);
-  };
 }

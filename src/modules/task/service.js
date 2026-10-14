@@ -9,10 +9,10 @@ export const STATUSES = ['todo', 'in_progress', 'review', 'done'];
 export const PRIORITIES = ['low', 'medium', 'high'];
 
 export class TaskService {
-  constructor(taskRepository, projectRepository, projectService) {
+  constructor(taskRepository, projectService, projectMemberService) {
     this.taskRepository = taskRepository;
-    this.projectRepository = projectRepository;
     this.projectService = projectService;
+    this.projectMemberService = projectMemberService;
   }
 
   async create({
@@ -26,11 +26,12 @@ export class TaskService {
     if (currentUser.role !== 'team_lead') {
       throw forbidden('Only a team lead can create task in project');
     }
-
-    const project = await this.projectRepository.findById(projectId);
-    if (!project) {
-      throw projectNotFound();
-    }
+    const { exists, role } = await this.projectService.getAccess(
+      projectId,
+      currentUser.id,
+    );
+    if (!exists) throw projectNotFound();
+    if (role !== 'owner') throw forbidden('Only the project owner can create tasks');
 
     if (
       !title ||
@@ -48,7 +49,7 @@ export class TaskService {
       throw new AppError(400, 'VALIDATION_ERROR', 'Enter another priority');
     }
 
-    if (!(await this.projectService.isMember(projectId, assigneeId)))
+    if (!(await this.projectMemberService.isMember(projectId, assigneeId)))
       throw new AppError(
         422,
         'ASSIGNEE_NOT_MEMBER',
@@ -158,7 +159,7 @@ export class TaskService {
     if (!role) throw forbidden();
     if (role !== 'owner') throw forbidden();
 
-    if (!(await this.projectService.isMember(task.projectId, assigneeId)))
+    if (!(await this.projectMemberService.isMember(task.projectId, assigneeId)))
       throw new AppError(
         422,
         'ASSIGNEE_NOT_MEMBER',

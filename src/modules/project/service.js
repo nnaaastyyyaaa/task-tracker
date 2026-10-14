@@ -5,9 +5,9 @@ const projectNotFound = () => new AppError(404, 'PROJECT_NOT_FOUND', 'Project no
 const forbidden = (message = 'Access denied') => new AppError(403, 'FORBIDDEN', message);
 
 export class ProjectService {
-  constructor({ projectRepository, userService }) {
+  constructor({ projectRepository, projectMemberService }) {
     this.projectRepository = projectRepository;
-    this.userService = userService;
+    this.projectMemberService = projectMemberService;
   }
 
   async create({ user, name, description }) {
@@ -23,17 +23,14 @@ export class ProjectService {
       description: prDescription,
       ownerId: user.id,
     }).toEntity();
-    const project = await this.projectRepository.create(entity);
-
-    await this.projectRepository.addMember(project.id, user.id, 'owner');
+    const project = await this.projectRepository.createWithOwner(entity);
     return project.toPublic();
   }
 
   async list(user) {
-    const memberships = await this.projectRepository.listMembershipsOf(user.id);
-    const projects = await this.projectRepository.findByIds(
-      memberships.map((m) => m.projectId),
-    );
+    const ids = await this.projectMemberService.listProjectIdsOf(user.id);
+    if (ids.length === 0) return [];
+    const projects = await this.projectRepository.findByIds(ids);
     return projects.map((p) => p.toPublic());
   }
 
@@ -41,52 +38,27 @@ export class ProjectService {
     const project = await this.projectRepository.findById(projectId);
     if (!project) throw projectNotFound();
 
-    const { role } = await this.getAccess(projectId, user.id);
+    const role = await this.projectMemberService.getRole(projectId, user.id);
     if (!role) throw forbidden();
 
-    const members = await this.#listMembers(projectId);
+    const members = await this.projectMemberService.list(projectId);
     return { ...project.toPublic(), members };
   }
 
   async getAccess(projectId, userId) {
     const project = await this.projectRepository.findById(projectId);
     if (!project) return { exists: false, role: null };
-    const member = await this.projectRepository.findMember(projectId, userId);
-    return { exists: true, role: member ? member.role : null };
+    const role = await this.projectMemberService.getRole(projectId, userId);
+    return { exists: true, role };
   }
 
-  async isMember(projectId, userId) {
-    return (await this.projectRepository.findMember(projectId, userId)) !== null;
-  }
+  async assertExists(projectId) {
+    const project = await this.projectRepository.findById(projectId);
 
-  async #listMembers(projectId) {
-    const rows = await this.projectRepository.listMembers(projectId);
-    const users = await Promise.all(rows.map((r) => this.userService.findById(r.userId)));
-    return rows.map((r, i) => ({
-      id: users[i].id,
-      name: users[i].name,
-      email: users[i].email,
-      role: r.role,
-    }));
-  }
-
-  async addMember({ currentUser, projectId, email }) {
-    const { exists, role } = await this.getAccess(projectId, currentUser.id);
-    if (!exists) throw projectNotFound();
-
-    if (role !== 'owner') throw forbidden('Only the project owner can add members');
-
-    if (!email || email.trim() === '') {
-      throw new AppError(400, 'VALIDATION_ERROR', 'Email required');
+    if (!project) {
+      throw projectNotFound();
     }
 
-    const user = await this.userService.findByEmail(email);
-    if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
-
-    if (await this.isMember(projectId, user.id)) {
-      throw new AppError(409, 'ALREADY_MEMBER', 'User is already a member');
-    }
-    await this.projectRepository.addMember(projectId, user.id, 'member');
-    return this.#listMembers(projectId);
+    return project;
   }
 }
