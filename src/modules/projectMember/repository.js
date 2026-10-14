@@ -1,3 +1,4 @@
+import { withRetry } from '../../utils/retry.js';
 import { ProjectMember } from './entity.js';
 
 export class ProjectMemberRepository {
@@ -6,9 +7,11 @@ export class ProjectMemberRepository {
   }
 
   async find(projectId, userId) {
-    const row = await this.prisma.projectMember.findUnique({
-      where: { project_id_user_id: { project_id: projectId, user_id: userId } },
-    });
+    const row = await withRetry(() =>
+      this.prisma.projectMember.findUnique({
+        where: { project_id_user_id: { project_id: projectId, user_id: userId } },
+      }),
+    );
     return row ? ProjectMember.fromEntity(row) : null;
   }
 
@@ -25,18 +28,22 @@ export class ProjectMemberRepository {
   }
 
   async listByProject(projectId) {
-    const rows = await this.prisma.projectMember.findMany({
-      where: { project_id: projectId },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+    const rows = await withRetry(() =>
+      this.prisma.projectMember.findMany({
+        where: { project_id: projectId },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+    );
     return rows.map((row) => ProjectMember.fromEntity(row));
   }
 
   async listProjectIdsOf(userId) {
-    const rows = await this.prisma.projectMember.findMany({
-      where: { user_id: userId },
-      select: { project_id: true },
-    });
+    const rows = await withRetry(() =>
+      this.prisma.projectMember.findMany({
+        where: { user_id: userId },
+        select: { project_id: true },
+      }),
+    );
     return rows.map((row) => row.project_id);
   }
 }

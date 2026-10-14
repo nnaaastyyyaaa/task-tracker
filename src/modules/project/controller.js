@@ -1,3 +1,5 @@
+import { parseId } from '../../utils/parseId.js';
+
 export class ProjectController {
   constructor({ projectService }) {
     this.projectService = projectService;
@@ -18,5 +20,5 @@ export class ProjectController {
   list = async (request) => this.projectService.list(request.user);
 
   getOne = async (request) =>
-    this.projectService.getById(request.user, Number(request.params.projectId));
+    this.projectService.getById(request.user, parseId(request.params.projectId));
 }

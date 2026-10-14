@@ -117,7 +117,7 @@ CREATE TABLE project_member (
   PRIMARY KEY (project_id, user_id),
   role        project_role_name NOT NULL
 );
-CREATE INDEX project_members_user_idx ON project_members (user_id);
+CREATE INDEX project_members_user_idx ON project_member (user_id);
 
 CREATE TYPE task_status AS ENUM ('todo', 'in_progress', 'review', 'done');
 CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high');

@@ -1,3 +1,4 @@
+import { withRetry } from '../../utils/retry.js';
 import { Task } from './entity.js';
 import { AppError } from '../../utils/errorHandler.js';
 
@@ -12,7 +13,7 @@ export class TaskRepository {
   }
 
   async findById(id) {
-    const row = await this.prisma.Task.findUnique({ where: { id } });
+    const row = await withRetry(() => this.prisma.Task.findUnique({ where: { id } }));
     return row ? Task.fromEntity(row) : null;
   }
 
@@ -22,7 +23,7 @@ export class TaskRepository {
     if (assigneeId !== undefined) {
       where.assignee_id = assigneeId;
     }
-    const rows = await this.prisma.Task.findMany({ where });
+    const rows = await withRetry(() => this.prisma.Task.findMany({ where }));
     return rows ? rows.map((row) => Task.fromEntity(row)) : null;
   }
 
@@ -40,30 +41,36 @@ export class TaskRepository {
   }
 
   async updateStatus(id, expectedStatus, newStatus) {
-    const result = await this.prisma.Task.updateMany({
-      where: {
-        id,
-        status: expectedStatus,
-      },
-      data: {
-        status: newStatus,
-      },
-    });
+    const result = await withRetry(() =>
+      this.prisma.Task.updateMany({
+        where: {
+          id,
+          status: expectedStatus,
+        },
+        data: {
+          status: newStatus,
+        },
+      }),
+    );
 
     if (result.count === 0) {
       return null;
     }
-    const updated = await this.prisma.Task.findUnique({
-      where: { id },
-    });
+    const updated = await withRetry(() =>
+      this.prisma.Task.findUnique({
+        where: { id },
+      }),
+    );
     return updated ? Task.fromEntity(updated) : null;
   }
 
   async delete(id) {
     try {
-      return await this.prisma.Task.delete({
-        where: { id },
-      });
+      return await withRetry(() =>
+        this.prisma.Task.delete({
+          where: { id },
+        }),
+      );
     } catch (e) {
       if (e.code === 'P2025') {
         throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');

@@ -23,7 +23,11 @@
     "start": "node ./src/server.js",
     "build": "node --check ./src/server.js",
     "check": "npm run format:check && npm run lint && npm run test && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:up": "docker compose up -d db",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

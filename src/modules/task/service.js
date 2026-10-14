@@ -36,15 +36,15 @@ export class TaskService {
     if (
       typeof title !== 'string' ||
       !title.trim() ||
-      typeof description !== 'string' ||
-      !description.trim() ||
+      (description !== undefined && typeof description !== 'string') ||
       !Number.isInteger(assigneeId) ||
       assigneeId <= 0
     ) {
       throw badRequest('Invalid task fields');
     }
 
-    const taskPriority = priority?.trim() !== '' ? priority : 'medium';
+    const taskPriority =
+      typeof priority === 'string' && priority.trim() === '' ? 'medium' : priority;
 
     if (!PRIORITIES.includes(taskPriority)) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Enter another priority');
@@ -61,7 +61,7 @@ export class TaskService {
       projectId,
       assigneeId,
       title: title.trim(),
-      description: description.trim(),
+      description: (description ?? '').trim(),
       priority: taskPriority,
       status: 'todo',
       createdAt: now,
@@ -81,6 +81,7 @@ export class TaskService {
 
     const { role } = await this.projectService.getAccess(task.projectId, user.id);
     if (!role) throw forbidden();
+    if (role !== 'owner') throw forbidden('Only the project owner can update tasks');
 
     const fields = {};
     if (title !== undefined) {
@@ -117,15 +118,10 @@ export class TaskService {
     if (!role) throw forbidden();
     let assigneeId;
     if (assignee !== undefined) {
-      assigneeId = Number(assignee);
-
-      if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
-        throw badRequest('Invalid assignee ID');
+      if (assignee !== 'me') {
+        throw badRequest('assignee must be "me"');
       }
-
-      if (assigneeId !== user.id && user.role !== 'team_lead') {
-        throw forbidden('You can only filter by your own tasks');
-      }
+      assigneeId = user.id;
     }
     const tasks = await this.taskRepository.findByProject(projectId, assigneeId);
     return tasks;
@@ -147,7 +143,7 @@ export class TaskService {
     const { role } = await this.projectService.getAccess(task.projectId, user.id);
     if (!role) throw forbidden();
 
-    if (task.assigneeId !== user.id) throw forbidden();
+    if (role !== 'owner' && task.assigneeId !== user.id) throw forbidden();
 
     if (typeof status !== 'string' || !STATUSES.includes(status)) {
       throw badRequest('Invalid task status');

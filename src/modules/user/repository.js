@@ -1,3 +1,4 @@
+import { withRetry } from '../../utils/retry.js';
 import { AppError } from '../../utils/errorHandler.js';
 import { User } from './entity.js';
 
@@ -7,12 +8,12 @@ export class UserRepository {
   }
 
   async findByEmail(email) {
-    const user = await this.prisma.User.findUnique({ where: { email } });
+    const user = await withRetry(() => this.prisma.User.findUnique({ where: { email } }));
     return user ? User.fromEntity(user) : null;
   }
 
   async findById(id) {
-    const user = await this.prisma.User.findUnique({ where: { id } });
+    const user = await withRetry(() => this.prisma.User.findUnique({ where: { id } }));
     return user ? User.fromEntity(user) : null;
   }
 

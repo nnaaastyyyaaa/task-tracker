@@ -9,12 +9,12 @@ export class UserController {
   };
 
   register = async (request, reply) => {
-    const created = await this.userService.register(request.body);
+    const created = await this.userService.register(request.body ?? {});
     this.sendResponse(reply, created.id, 201);
   };
 
   login = async (request, reply) => {
-    const { sid, user } = await this.userService.login(request.body);
+    const { sid, user } = await this.userService.login(request.body ?? {});
     reply.setCookie('sid', sid, {
       httpOnly: true,
       sameSite: 'lax',

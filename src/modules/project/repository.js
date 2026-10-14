@@ -1,3 +1,4 @@
+import { withRetry } from '../../utils/retry.js';
 import { Project } from './entity.js';
 
 export class ProjectRepository {
@@ -6,12 +7,14 @@ export class ProjectRepository {
   }
 
   async findById(id) {
-    const row = await this.prisma.Project.findUnique({ where: { id } });
+    const row = await withRetry(() => this.prisma.Project.findUnique({ where: { id } }));
     return row ? Project.fromEntity(row) : null;
   }
 
   async findByIds(ids) {
-    const rows = await this.prisma.Project.findMany({ where: { id: { in: ids } } });
+    const rows = await withRetry(() =>
+      this.prisma.Project.findMany({ where: { id: { in: ids } } }),
+    );
     return rows ? rows.map((row) => Project.fromEntity(row)) : null;
   }
 

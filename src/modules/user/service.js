@@ -12,8 +12,9 @@ export class UserService {
     this.sessionRepository = sessionRepository;
   }
 
-  async register({ email, password, name, role }) {
+  async register({ email, password, name, role } = {}) {
     if (
+      [email, password, name, role].some((v) => typeof v !== 'string') ||
       !email ||
       email.trim() === '' ||
       !password ||
@@ -26,7 +27,8 @@ export class UserService {
       throw new AppError(400, 'VALIDATION_ERROR', 'Enter all required fields');
     }
 
-    const correctEmail = EMAIL_RE.test(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    const correctEmail = EMAIL_RE.test(normalizedEmail);
     if (!correctEmail) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Invalid email');
     }
@@ -41,22 +43,32 @@ export class UserService {
       throw new AppError(400, 'VALIDATION_ERROR', 'User role is invalid');
     }
 
-    const emailExists = await this.userRepository.findByEmail(email.toLowerCase());
+    const emailExists = await this.userRepository.findByEmail(normalizedEmail);
     if (emailExists) {
       throw new AppError(409, 'EMAIL_TAKEN', 'User with this email already exists');
     }
 
-    const user = new User({ email, passwordHash, name, role }).toEntity();
+    const user = new User({
+      email: normalizedEmail,
+      passwordHash,
+      name,
+      role,
+    }).toEntity();
     const created = await this.userRepository.create(user);
     return created;
   }
 
-  async login({ email, password }) {
-    if (!email || email.trim() === '' || !password || password.trim() === '') {
+  async login({ email, password } = {}) {
+    if (
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      email.trim() === '' ||
+      password.trim() === ''
+    ) {
       throw new AppError(400, 'VALIDATION_ERROR', 'Enter all required fields');
     }
 
-    const user = await this.userRepository.findByEmail(email.toLowerCase());
+    const user = await this.userRepository.findByEmail(email.trim().toLowerCase());
     const ok = user && (await bcrypt.compare(password, user.passwordHash));
     if (!ok) throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
 
