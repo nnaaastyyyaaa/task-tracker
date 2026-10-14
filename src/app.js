@@ -6,9 +6,11 @@ import cookie from '@fastify/cookie';
 import { CustomHandler } from './utils/errorHandler.js';
 import { userService, checkUser } from './container/user.js';
 import { projectService } from './container/project.js';
+import { taskService } from './container/task.js';
 
 import userRoutes from './routes/userRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
+import taskRoutes from './routes/taskRoutes.js';
 
 export function app() {
   const fastify = Fastify({
@@ -28,6 +30,7 @@ export function app() {
   });
   fastify.register(userRoutes, { userService, checkUser });
   fastify.register(projectRoutes, { projectService, checkUser });
+  fastify.register(taskRoutes, { taskService, checkUser });
 
   return fastify;
 }
