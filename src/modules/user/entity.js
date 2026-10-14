@@ -29,7 +29,6 @@ export class User {
       id: this.id,
       name: this.name,
       email: this.email,
-      passwordHash: this.password_hash,
       role: this.role,
     };
   }

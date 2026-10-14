@@ -9,7 +9,7 @@ export class UserController {
   };
 
   register = async (request, reply) => {
-    const created = this.userService.register(request.body);
+    const created = await this.userService.register(request.body);
     this.sendResponse(reply, created.id, 201);
   };
 

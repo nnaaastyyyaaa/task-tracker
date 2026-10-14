@@ -15,8 +15,20 @@ export class ProjectService {
       throw forbidden('Only a team lead can create projects');
     }
 
-    const prDescription = description ? description.trim() : '';
-    const prName = name ? name.trim() : '';
+    if (typeof name !== 'string' || !name.trim()) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Project name is required');
+    }
+
+    if (
+      description !== undefined &&
+      description !== null &&
+      typeof description !== 'string'
+    ) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Invalid project description');
+    }
+
+    const prName = name.trim();
+    const prDescription = typeof description === 'string' ? description.trim() : '';
 
     const entity = new Project({
       name: prName,

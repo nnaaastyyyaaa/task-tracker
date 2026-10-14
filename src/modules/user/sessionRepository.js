@@ -21,7 +21,7 @@ export class SessionRepository {
     const session = await this.prisma.Session.findUnique({ where: { id } });
     if (!session) return null;
     if (session.expires_at <= new Date(Date.now())) {
-      this.prisma.Session.deleteMany({ where: { id } });
+      await this.prisma.Session.deleteMany({ where: { id } });
       return null;
     }
     return session;
@@ -31,13 +31,13 @@ export class SessionRepository {
     const session = await this.prisma.Session.findFirst({ where: { user_id: userId } });
     if (!session) return null;
     if (session.expires_at <= new Date(Date.now())) {
-      this.prisma.Session.deleteMany({ where: { id: userId } });
+      await this.prisma.Session.deleteMany({ where: { id: session.id } });
       return null;
     }
     return session;
   }
 
   async delete(id) {
-    await this.prisma.session.deleteMany({ where: { id } });
+    await this.prisma.Session.deleteMany({ where: { id } });
   }
 }

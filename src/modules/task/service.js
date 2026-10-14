@@ -34,13 +34,14 @@ export class TaskService {
     if (role !== 'owner') throw forbidden('Only the project owner can create tasks');
 
     if (
-      !title ||
-      title.trim() === '' ||
-      !description ||
-      description.trim() === '' ||
-      !assigneeId
+      typeof title !== 'string' ||
+      !title.trim() ||
+      typeof description !== 'string' ||
+      !description.trim() ||
+      !Number.isInteger(assigneeId) ||
+      assigneeId <= 0
     ) {
-      throw new AppError(400, 'VALIDATION_ERROR', 'Enter all required fields');
+      throw badRequest('Invalid task fields');
     }
 
     const taskPriority = priority?.trim() !== '' ? priority : 'medium';
@@ -58,10 +59,10 @@ export class TaskService {
     const now = new Date();
     const task = new Task({
       projectId,
-      title,
-      description,
       assigneeId,
-      priority,
+      title: title.trim(),
+      description: description.trim(),
+      priority: taskPriority,
       status: 'todo',
       createdAt: now,
       updatedAt: now,
@@ -82,11 +83,24 @@ export class TaskService {
     if (!role) throw forbidden();
 
     const fields = {};
-    if (title !== undefined) fields.title = title.trim();
-    if (description !== undefined) fields.description = description.trim();
+    if (title !== undefined) {
+      if (typeof title !== 'string' || !title.trim()) {
+        throw badRequest('Task title cannot be empty');
+      }
+      fields.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      if (typeof description !== 'string') {
+        throw badRequest('Invalid task description');
+      }
+      fields.description = description.trim();
+    }
 
     if (priority !== undefined) {
-      if (!PRIORITIES.includes(priority)) throw badRequest('Enter another priority');
+      if (typeof priority !== 'string' || !PRIORITIES.includes(priority)) {
+        throw badRequest('Invalid task priority');
+      }
       fields.priority = priority;
     }
     if (Object.keys(fields).length === 0)
@@ -104,6 +118,11 @@ export class TaskService {
     let assigneeId;
     if (assignee !== undefined) {
       assigneeId = Number(assignee);
+
+      if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
+        throw badRequest('Invalid assignee ID');
+      }
+
       if (assigneeId !== user.id && user.role !== 'team_lead') {
         throw forbidden('You can only filter by your own tasks');
       }
@@ -130,8 +149,9 @@ export class TaskService {
 
     if (task.assigneeId !== user.id) throw forbidden();
 
-    if (!STATUSES.includes(status.trim()))
-      throw badRequest('Enter another value for status');
+    if (typeof status !== 'string' || !STATUSES.includes(status)) {
+      throw badRequest('Invalid task status');
+    }
 
     if (status === task.status) return task;
     if (!(Math.abs(STATUSES.indexOf(task.status) - STATUSES.indexOf(status)) === 1)) {
@@ -153,6 +173,9 @@ export class TaskService {
   }
 
   async changeAssignee(user, taskId, assigneeId) {
+    if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
+      throw badRequest('Invalid assignee ID');
+    }
     const task = await this.taskRepository.findById(taskId);
     if (!task) throw taskNotFound();
     const { role } = await this.projectService.getAccess(task.projectId, user.id);

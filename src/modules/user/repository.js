@@ -24,6 +24,7 @@ export class UserRepository {
       if (e.code === 'P2002') {
         throw new AppError(409, 'EMAIL_TAKEN', 'User with this email already exists');
       }
+      throw e;
     }
   }
 }

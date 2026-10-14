@@ -18,10 +18,10 @@ export function CustomHandler(fastify) {
         .code(400)
         .send({ error: { code: 'VALIDATION_ERROR', message: error.message } });
     }
-    reply.status(error.statusCode || 500).send({
+    reply.status(500).send({
       error: {
         code: 'INTERNAL_ERROR',
-        message: error.message || 'Something went wrong',
+        message: 'Something went wrong',
       },
     });
   });

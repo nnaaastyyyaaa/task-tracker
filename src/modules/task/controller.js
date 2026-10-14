@@ -62,6 +62,7 @@ export class TaskController {
 
   remove = async (request, reply) => {
     await this.taskService.remove(request.user, Number(request.params.taskId));
-    this.sendResponse(reply, { message: 'deleted' }, 204);
+
+    return reply.code(204).send();
   };
 }
