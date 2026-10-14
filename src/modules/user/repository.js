@@ -1,25 +1,29 @@
+import { AppError } from '../../utils/errorHandler.js';
 import { User } from './entity.js';
 
 export class UserRepository {
-  constructor(db) {
-    this.db = db;
+  constructor(prisma) {
+    this.prisma = prisma;
   }
 
   async findByEmail(email) {
-    for (const row of this.db.users.values()) {
-      if (row.email === email) return User.fromEntity(row);
-    }
-    return null;
+    const user = await this.prisma.User.findUnique({ where: { email } });
+    return user ? User.fromEntity(user) : null;
   }
 
   async findById(id) {
-    const row = this.db.users.get(id);
-    return row ? User.fromEntity(row) : null;
+    const user = await this.prisma.User.findUnique({ where: { id } });
+    return user ? User.fromEntity(user) : null;
   }
 
   async create(user) {
-    const row = { id: ++this.db.seq.users, ...user };
-    this.db.users.set(row.id, row);
-    return User.fromEntity(row);
+    try {
+      const created = await this.prisma.User.create({ data: user });
+      return created ? User.fromEntity(created) : null;
+    } catch (e) {
+      if (e.code === 'P2002') {
+        throw new AppError(409, 'EMAIL_TAKEN', 'User with this email already exists');
+      }
+    }
   }
 }

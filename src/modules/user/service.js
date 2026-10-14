@@ -60,6 +60,10 @@ export class UserService {
     const ok = user && (await bcrypt.compare(password, user.passwordHash));
     if (!ok) throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid credentials');
 
+    const prevSid = await this.sessionRepository.findByUserId(user.id);
+    if (prevSid) {
+      await this.sessionRepository.delete(prevSid.id);
+    }
     const sid = await this.sessionRepository.create(user.id, SESSION_TTL);
     return { sid, user };
   }

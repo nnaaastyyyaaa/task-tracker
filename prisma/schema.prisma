@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  team_lead
+  team_member
+}
+
+enum MemberRole {
+  owner
+  member
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          UserRole
+
+  sessions    Session[]
+  owned       Project[]       @relation("ProjectOwner")
+  memberships ProjectMember[]
+  assigned Task[] @relation("TaskAssignee")
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  user_id    Int
+  expires_at DateTime
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String   @default("")
+  owner_id    Int
+  owner       User     @relation("ProjectOwner", fields: [owner_id], references: [id])
+  members     ProjectMember[]
+  tasks Task[]
+
+  @@index([owner_id])
+}
+
+model ProjectMember {
+  project_id Int
+  user_id    Int
+  role       MemberRole
+  project    Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([project_id, user_id])
+  @@index([user_id])
+}
+
+enum TaskStatus {
+    todo
+    in_progress
+    review
+    done
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  project_id  Int
+  title       String
+  description String       @default("")
+  assignee_id Int?
+  priority    TaskPriority @default(medium)
+  status      TaskStatus   @default(todo)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  project  Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignee User?   @relation("TaskAssignee", fields: [assignee_id], references: [id], onDelete: SetNull)
+
+  @@index([project_id, status])
+  @@index([assignee_id])
+}

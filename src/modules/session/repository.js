@@ -1,27 +1,43 @@
 import { randomBytes } from 'node:crypto';
 
 export class SessionRepository {
-  constructor(db) {
-    this.db = db;
+  constructor(prisma) {
+    this.prisma = prisma;
   }
 
   async create(userId, ttl) {
     const id = randomBytes(32).toString('hex');
-    this.db.sessions.set(id, { id, user_id: userId, expires_at: Date.now() + ttl });
-    return id;
+    const session = await this.prisma.Session.create({
+      data: {
+        id,
+        user_id: userId,
+        expires_at: new Date(Date.now() + ttl),
+      },
+    });
+    return session ? session.id : null;
   }
 
   async findValid(id) {
-    const s = this.db.sessions.get(id);
-    if (!s) return null;
-    if (s.expires_at <= Date.now()) {
-      this.db.sessions.delete(id);
+    const session = await this.prisma.Session.findUnique({ where: { id } });
+    if (!session) return null;
+    if (session.expires_at <= new Date(Date.now())) {
+      this.prisma.Session.deleteMany({ where: { id } });
       return null;
     }
-    return s;
+    return session;
+  }
+
+  async findByUserId(userId) {
+    const session = await this.prisma.Session.findFirst({ where: { user_id: userId } });
+    if (!session) return null;
+    if (session.expires_at <= new Date(Date.now())) {
+      this.prisma.Session.deleteMany({ where: { id: userId } });
+      return null;
+    }
+    return session;
   }
 
   async delete(id) {
-    this.db.sessions.delete(id);
+    await this.prisma.session.deleteMany({ where: { id } });
   }
 }

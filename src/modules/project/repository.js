@@ -1,27 +1,23 @@
 import { Project } from './entity.js';
 
 export class ProjectRepository {
-  constructor(db) {
-    this.db = db;
+  constructor(prisma) {
+    this.prisma = prisma;
   }
 
   async findById(id) {
-    const row = this.db.projects.get(id);
+    const row = await this.prisma.Project.findUnique({ where: { id } });
     return row ? Project.fromEntity(row) : null;
   }
 
   async findByIds(ids) {
-    return ids
-      .map((id) => this.db.projects.get(id))
-      .filter(Boolean)
-      .map((row) => Project.fromEntity(row))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const rows = await this.prisma.Project.findMany({ where: { id: { in: ids } } });
+    return rows ? rows.map((row) => Project.fromEntity(row)) : null;
   }
 
   async create(project) {
-    const row = { id: ++this.db.seq.projects, ...project };
-    this.db.projects.set(row.id, row);
-    return Project.fromEntity(row);
+    const created = await this.prisma.Project.create({ data: project });
+    return created ? Project.fromEntity(created) : null;
   }
 
   #toMember(row) {
@@ -29,25 +25,45 @@ export class ProjectRepository {
   }
 
   async addMember(projectId, userId, role) {
-    this.db.members.push({ project_id: projectId, user_id: userId, role });
+    try {
+      await this.prisma.projectMember.create({
+        data: { project_id: projectId, user_id: userId, role },
+      });
+      return true;
+    } catch (e) {
+      if (e.code === 'P2002') return false;
+      throw e;
+    }
   }
 
   async findMember(projectId, userId) {
-    const row = this.db.members.find(
-      (m) => m.project_id === projectId && m.user_id === userId,
-    );
+    const row = await this.prisma.ProjectMember.findUnique({
+      where: {
+        project_id_user_id: {
+          project_id: projectId,
+          user_id: userId,
+        },
+      },
+    });
     return row ? this.#toMember(row) : null;
   }
 
   async listMembers(projectId) {
-    return this.db.members
-      .filter((m) => m.project_id === projectId)
-      .map((r) => this.#toMember(r));
+    const rows = await this.prisma.ProjectMember.findMany({
+      where: {
+        project_id: projectId,
+      },
+    });
+    return rows ? rows.map((row) => this.#toMember(row)) : null;
   }
 
   async listMembershipsOf(userId) {
-    return this.db.members
-      .filter((m) => m.user_id === userId)
-      .map((r) => this.#toMember(r));
+    const rows = await this.prisma.ProjectMember.findMany({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    return rows ? rows.map((row) => this.#toMember(row)) : null;
   }
 }

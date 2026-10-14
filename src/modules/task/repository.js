@@ -1,44 +1,61 @@
 import { Task } from './entity.js';
+import { AppError } from '../../utils/errorHandler.js';
 
 export class TaskRepository {
-  constructor(db) {
-    this.db = db;
+  constructor(prisma) {
+    this.prisma = prisma;
   }
 
   async create(task) {
-    const row = { id: ++this.db.seq.tasks, ...task };
-    this.db.tasks.set(row.id, row);
-    return Task.fromEntity(row);
+    const row = await this.prisma.Task.create({ data: task });
+    return row ? Task.fromEntity(row) : null;
   }
 
   async findById(id) {
-    const row = this.db.tasks.get(id);
+    // const row = this.db.tasks.get(id);
+    const row = await this.prisma.Task.findUnique({ where: { id } });
     return row ? Task.fromEntity(row) : null;
   }
 
   async findByProject(projectId, assigneeId) {
-    return [...this.db.tasks.values()]
-      .filter((row) => row.project_id === projectId)
-      .filter((row) => row.assignee_id === assigneeId)
-      .map((row) => Task.fromEntity(row));
+    const rows = await this.prisma.Task.findMany({
+      where: {
+        project_id: projectId,
+        assignee_id: assigneeId,
+      },
+    });
+    return rows ? rows.map((row) => Task.fromEntity(row)) : null;
   }
 
   async update(id, fields) {
-    const row = this.db.tasks.get(id);
-    if (!row) return null;
-    Object.assign(row, fields, { updated_at: new Date() });
-    return Task.fromEntity(row);
+    try {
+      const row = await this.prisma.Task.update({
+        where: { id },
+        data: fields,
+      });
+      return row ? Task.fromEntity(row) : null;
+    } catch (e) {
+      if (e.code === 'P2025') throw new AppError(404, 'NOT_FOUND', 'Task not found');
+      throw e;
+    }
   }
 
   async updateStatus(id, expectedStatus, newStatus) {
-    const row = this.db.tasks.get(id);
-    if (!row || row.status !== expectedStatus) return null;
-    row.status = newStatus;
-    row.updated_at = new Date();
-    return Task.fromEntity(row);
+    try {
+      const row = await this.prisma.Task.findUnique({ where: { id } });
+      if (!row || row.status !== expectedStatus) return null;
+      const updated = await this.prisma.Task.update({
+        where: { id },
+        data: { status: newStatus },
+      });
+      return updated ? Task.fromEntity(updated) : null;
+    } catch (e) {
+      if (e.code === 'P2025') throw new AppError(404, 'NOT_FOUND', 'Task not found');
+      throw e;
+    }
   }
 
   async delete(id) {
-    return this.db.tasks.delete(id);
+    return await this.prisma.Task.delete({ where: { id } });
   }
 }
