@@ -47,4 +47,10 @@ export class SessionRepository {
   async delete(id) {
     await withRetry(() => this.prisma.session.deleteMany({ where: { id } }));
   }
+
+  async deleteExpired() {
+    await withRetry(() =>
+      this.prisma.session.deleteMany({ where: { expires_at: { lte: new Date() } } }),
+    );
+  }
 }

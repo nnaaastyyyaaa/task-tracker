@@ -27,7 +27,8 @@
     "db:up": "docker compose up -d db",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

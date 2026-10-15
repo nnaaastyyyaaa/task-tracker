@@ -69,7 +69,8 @@ export class TaskService {
       throw badRequest('priority: LOW, MEDIUM or HIGH');
     }
 
-    if (!(await this.projectMemberService.isMember(projectId, body.assigneeId)))
+    const assigneeId = checkId(body.assigneeId, 'assigneeId');
+    if (!(await this.projectMemberService.isMember(projectId, assigneeId)))
       throw notMember();
 
     const task = new Task({
@@ -90,7 +91,7 @@ export class TaskService {
     checkBody(body, ['title', 'description', 'priority']);
     const fields = {};
     if (body.title !== undefined)
-      fields.title = str(body.title, 'title', { min: 1, max: 200 });
+      fields.title = str(body.title, 'title', { min: 2, max: 200 });
     if (body.description !== undefined) {
       fields.description = str(body.description, 'description', { max: 5000 });
     }
@@ -114,7 +115,7 @@ export class TaskService {
     if (assignee !== undefined && assignee !== 'me') {
       throw badRequest('assignee must be "me"');
     }
-    assigneeId = user.id;
+    if (assignee === 'me') assigneeId = user.id;
     const tasks = await this.taskRepository.findByProject(projectId, assigneeId);
     return this.#present(tasks);
   }
@@ -133,7 +134,7 @@ export class TaskService {
       throw badRequest('Invalid task status');
     }
 
-    if (body.status === task.status) return task;
+    if (body.status === task.status) return this.#presentOne(task);
     if (
       !(Math.abs(STATUSES.indexOf(task.status) - STATUSES.indexOf(body.status)) === 1)
     ) {

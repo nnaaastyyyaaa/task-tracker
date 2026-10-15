@@ -109,4 +109,8 @@ export class UserService {
     const users = await this.userRepository.findByIds(ids);
     return users.map((u) => u.toPublic());
   }
+
+  async cleanupSessions() {
+    await this.sessionRepository.deleteExpired();
+  }
 }
