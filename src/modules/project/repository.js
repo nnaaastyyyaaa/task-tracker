@@ -13,7 +13,10 @@ export class ProjectRepository {
 
   async findByIds(ids) {
     const rows = await withRetry(() =>
-      this.prisma.Project.findMany({ where: { id: { in: ids } } }),
+      this.prisma.Project.findMany({
+        where: { id: { in: ids } },
+        orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      }),
     );
     return rows ? rows.map((row) => Project.fromEntity(row)) : null;
   }

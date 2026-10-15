@@ -30,8 +30,8 @@ export class Task {
       assigneeId: this.assigneeId,
       priority: this.priority,
       status: this.status,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      createdAt: this.createdAt.toISOString(),
+      updatedAt: this.updatedAt.toISOString(),
     };
   }
 
@@ -42,9 +42,6 @@ export class Task {
       description: this.description,
       assignee_id: this.assigneeId,
       priority: this.priority,
-      status: this.status,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
     };
   }
 

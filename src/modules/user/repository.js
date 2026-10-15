@@ -17,10 +17,17 @@ export class UserRepository {
     return user ? User.fromEntity(user) : null;
   }
 
+  async findByIds(ids) {
+    const rows = await withRetry(() =>
+      this.prisma.User.findMany({ where: { id: { in: ids } } }),
+    );
+    return rows.map((row) => User.fromEntity(row));
+  }
+
   async create(user) {
     try {
       const created = await this.prisma.User.create({ data: user });
-      return created ? User.fromEntity(created) : null;
+      return User.fromEntity(created);
     } catch (e) {
       if (e.code === 'P2002') {
         throw new AppError(409, 'EMAIL_TAKEN', 'User with this email already exists');

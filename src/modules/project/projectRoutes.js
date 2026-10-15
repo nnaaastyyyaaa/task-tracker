@@ -7,4 +7,5 @@ export default async function projectRoutes(fastify, { projectService, checkUser
   fastify.post('/projects', auth, controller.create);
   fastify.get('/projects', auth, controller.list);
   fastify.get('/projects/:projectId', auth, controller.getOne);
+  fastify.post('/projects/:projectId/members', auth, controller.addMember);
 }

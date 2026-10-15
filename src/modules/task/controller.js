@@ -19,11 +19,11 @@ export class TaskController {
   };
 
   create = async (request, reply) => {
-    const task = await this.taskService.create({
-      currentUser: request.user,
-      projectId: parseId(request.params.projectId),
-      ...request.body,
-    });
+    const task = await this.taskService.create(
+      request.user,
+      parseId(request.params.projectId),
+      request.body,
+    );
     this.sendResponse(reply, task, 201);
   };
 
@@ -36,11 +36,11 @@ export class TaskController {
   };
 
   update = async (request, reply) => {
-    const updated = await this.taskService.update({
-      user: request.user,
-      taskId: parseId(request.params.taskId),
-      ...request.body,
-    });
+    const updated = await this.taskService.update(
+      request.user,
+      parseId(request.params.taskId),
+      request.body,
+    );
     this.sendResponse(reply, updated, 200);
   };
 
@@ -48,7 +48,7 @@ export class TaskController {
     const updated = await this.taskService.changeStatus(
       request.user,
       parseId(request.params.taskId),
-      request.body?.status,
+      request.body,
     );
     this.sendResponse(reply, updated, 200);
   };
@@ -57,7 +57,7 @@ export class TaskController {
     const updated = await this.taskService.changeAssignee(
       request.user,
       parseId(request.params.taskId),
-      request.body?.assigneeId,
+      request.body,
     );
     this.sendResponse(reply, updated, 200);
   };

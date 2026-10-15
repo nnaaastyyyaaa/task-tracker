@@ -7,12 +7,10 @@ import { CustomHandler } from './utils/errorHandler.js';
 import { userService, checkUser } from './container/user.js';
 import { projectService } from './container/project.js';
 import { taskService } from './container/task.js';
-import { projectMemberService } from './container/projectMember.js';
 
 import userRoutes from './modules/user/userRoutes.js';
 import projectRoutes from './modules/project/projectRoutes.js';
 import taskRoutes from './modules/task/taskRoutes.js';
-import projectMemberRoutes from './modules/projectMember/projectMemberRoutes.js';
 
 export function app() {
   const fastify = Fastify({
@@ -27,13 +25,10 @@ export function app() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
 
-  fastify.get('/health', function (request, reply) {
-    reply.send({ status: 'OK' });
-  });
+  fastify.get('/health', () => ({ status: 'OK' }));
   fastify.register(userRoutes, { userService, checkUser });
   fastify.register(projectRoutes, { projectService, checkUser });
   fastify.register(taskRoutes, { taskService, checkUser });
-  fastify.register(projectMemberRoutes, { projectMemberService, checkUser });
 
   return fastify;
 }

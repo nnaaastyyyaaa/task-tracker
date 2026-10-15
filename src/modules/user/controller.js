@@ -9,16 +9,16 @@ export class UserController {
   };
 
   register = async (request, reply) => {
-    const created = await this.userService.register(request.body ?? {});
-    this.sendResponse(reply, created.id, 201);
+    const created = await this.userService.register(request.body);
+    this.sendResponse(reply, created, 201);
   };
 
   login = async (request, reply) => {
-    const { sid, user } = await this.userService.login(request.body ?? {});
+    const { sid, user } = await this.userService.login(request.body);
     reply.setCookie('sid', sid, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: SESSION_TTL / 1000,
     });
@@ -28,6 +28,6 @@ export class UserController {
   logout = async (request, reply) => {
     await this.userService.logout(request.sid);
     reply.clearCookie('sid', { path: '/' });
-    this.sendResponse(reply, 'user logout', 204);
+    return reply.code(204).send();
   };
 }

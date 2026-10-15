@@ -9,7 +9,7 @@ export class SessionRepository {
   async create(userId, ttl) {
     const id = randomBytes(32).toString('hex');
     const session = await withRetry(() =>
-      this.prisma.Session.create({
+      this.prisma.session.create({
         data: {
           id,
           user_id: userId,
@@ -20,13 +20,13 @@ export class SessionRepository {
     return session ? session.id : null;
   }
 
-  async findValid(id) {
+  async findValidWithUser(id) {
     const session = await withRetry(() =>
-      this.prisma.Session.findUnique({ where: { id } }),
+      this.prisma.session.findUnique({ where: { id }, include: { user: true } }),
     );
     if (!session) return null;
     if (session.expires_at <= new Date(Date.now())) {
-      await this.prisma.Session.deleteMany({ where: { id } });
+      await this.delete(id);
       return null;
     }
     return session;
@@ -34,17 +34,17 @@ export class SessionRepository {
 
   async findByUserId(userId) {
     const session = await withRetry(() =>
-      this.prisma.Session.findFirst({ where: { user_id: userId } }),
+      this.prisma.session.findFirst({ where: { user_id: userId } }),
     );
     if (!session) return null;
     if (session.expires_at <= new Date(Date.now())) {
-      await this.prisma.Session.deleteMany({ where: { id: session.id } });
+      await this.prisma.session.deleteMany({ where: { id: session.id } });
       return null;
     }
     return session;
   }
 
   async delete(id) {
-    await withRetry(() => this.prisma.Session.deleteMany({ where: { id } }));
+    await withRetry(() => this.prisma.session.deleteMany({ where: { id } }));
   }
 }

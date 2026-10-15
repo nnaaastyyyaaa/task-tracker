@@ -23,15 +23,14 @@ enum MemberRole {
 
 model User {
   id            Int      @id @default(autoincrement())
-  name          String
-  email         String   @unique
+  name          String   @db.VarChar(100)
+  email         String   @unique @db.VarChar(254)
   password_hash String
   role          UserRole
 
   sessions    Session[]
   owned       Project[]       @relation("ProjectOwner")
   memberships ProjectMember[]
-  assigned Task[] @relation("TaskAssignee")
 }
 
 model Session {
@@ -46,8 +45,8 @@ model Session {
 
 model Project {
   id          Int      @id @default(autoincrement())
-  name        String
-  description String   @default("")
+  name        String   @db.VarChar(100)
+  description String   @default("") @db.VarChar(1000)
   owner_id    Int
   owner       User     @relation("ProjectOwner", fields: [owner_id], references: [id])
   members     ProjectMember[]
@@ -62,6 +61,7 @@ model ProjectMember {
   role       MemberRole
   project    Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tasks      Task[]
 
   @@id([project_id, user_id])
   @@index([user_id])
@@ -83,17 +83,18 @@ enum TaskPriority {
 model Task {
   id          Int          @id @default(autoincrement())
   project_id  Int
-  title       String
-  description String       @default("")
-  assignee_id Int?
+  title       String       @db.VarChar(200)
+  description String       @default("") @db.VarChar(5000)
+  assignee_id Int
   priority    TaskPriority @default(medium)
   status      TaskStatus   @default(todo)
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
 
   project  Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  assignee User?   @relation("TaskAssignee", fields: [assignee_id], references: [id], onDelete: SetNull)
+  assignee ProjectMember @relation(fields: [project_id, assignee_id], references: [project_id, user_id], onDelete: NoAction)
 
   @@index([project_id, status])
   @@index([assignee_id])
+  @@index([project_id, assignee_id])
 }

@@ -10,10 +10,7 @@ export class ProjectController {
   };
 
   create = async (request, reply) => {
-    const project = await this.projectService.create({
-      user: request.user,
-      ...request.body,
-    });
+    const project = await this.projectService.create(request.user, request.body);
     return this.sendResponse(reply, project, 201);
   };
 
@@ -21,4 +18,13 @@ export class ProjectController {
 
   getOne = async (request) =>
     this.projectService.getById(request.user, parseId(request.params.projectId));
+
+  addMember = async (request, reply) => {
+    const members = await this.projectService.addMember(
+      request.user,
+      parseId(request.params.projectId),
+      request.body,
+    );
+    return this.sendResponse(reply, members, 201);
+  };
 }

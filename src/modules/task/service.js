@@ -1,156 +1,142 @@
 import { AppError } from '../../utils/errorHandler.js';
+import { badRequest, checkBody, checkId, str } from '../../utils/validation.js';
 import { Task } from './entity.js';
 
 const projectNotFound = () => new AppError(404, 'PROJECT_NOT_FOUND', 'Project not found');
 const taskNotFound = () => new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
 const forbidden = (message = 'Access denied') => new AppError(403, 'FORBIDDEN', message);
-const badRequest = (message) => new AppError(400, 'VALIDATION_ERROR', message);
+const notMember = () =>
+  new AppError(422, 'ASSIGNEE_NOT_MEMBER', 'Assignee is not a member of the project');
+
 export const STATUSES = ['todo', 'in_progress', 'review', 'done'];
 export const PRIORITIES = ['low', 'medium', 'high'];
 
 export class TaskService {
-  constructor(taskRepository, projectService, projectMemberService) {
+  constructor({ taskRepository, projectService, projectMemberService, userService }) {
     this.taskRepository = taskRepository;
     this.projectService = projectService;
     this.projectMemberService = projectMemberService;
+    this.userService = userService;
   }
 
-  async create({
-    currentUser,
-    projectId,
-    title,
-    description,
-    assigneeId,
-    priority = 'medium',
-  }) {
-    if (currentUser.role !== 'team_lead') {
-      throw forbidden('Only a team lead can create task in project');
-    }
-    const { exists, role } = await this.projectService.getAccess(
-      projectId,
-      currentUser.id,
-    );
+  async #projectRole(projectId, user) {
+    const { exists, role } = await this.projectService.getAccess(projectId, user.id);
     if (!exists) throw projectNotFound();
+    return role;
+  }
+
+  async #taskWithRole(taskId, user) {
+    const task = await this.taskRepository.findById(taskId);
+    if (!task) throw taskNotFound();
+    const { role } = await this.projectService.getAccess(task.projectId, user.id);
+    if (!role) throw forbidden();
+    return { task, role };
+  }
+
+  async #ownerTask(taskId, user) {
+    const { task, role } = await this.#taskWithRole(taskId, user);
+    if (role !== 'owner') throw forbidden('Only the project owner can do this');
+    return task;
+  }
+
+  async #present(tasks) {
+    const ids = [...new Set(tasks.map((t) => t.assigneeId))];
+    const users = await this.userService.findByIds(ids);
+    const names = new Map(users.map((u) => [u.id, u.name]));
+    return tasks.map((t) => ({
+      ...t,
+      assigneeName: names.get(t.assigneeId) ?? null,
+    }));
+  }
+
+  async #presentOne(task) {
+    return (await this.#present([task]))[0];
+  }
+
+  async create(currentUser, projectId, body) {
+    const role = await this.#projectRole(projectId, currentUser);
     if (role !== 'owner') throw forbidden('Only the project owner can create tasks');
 
-    if (
-      typeof title !== 'string' ||
-      !title.trim() ||
-      (description !== undefined && typeof description !== 'string') ||
-      !Number.isInteger(assigneeId) ||
-      assigneeId <= 0
-    ) {
-      throw badRequest('Invalid task fields');
-    }
-
-    const taskPriority =
-      typeof priority === 'string' && priority.trim() === '' ? 'medium' : priority;
+    checkBody(body, ['title', 'description', 'assigneeId', 'priority']);
+    const title = str(body.title, 'title', { min: 2, max: 200 });
+    const description =
+      body.description === undefined
+        ? ''
+        : str(body.description, 'description', { max: 5000 });
+    const taskPriority = body.priority === undefined ? 'medium' : body.priority;
 
     if (!PRIORITIES.includes(taskPriority)) {
-      throw new AppError(400, 'VALIDATION_ERROR', 'Enter another priority');
+      throw badRequest('priority: LOW, MEDIUM or HIGH');
     }
 
-    if (!(await this.projectMemberService.isMember(projectId, assigneeId)))
-      throw new AppError(
-        422,
-        'ASSIGNEE_NOT_MEMBER',
-        'Assignee is not a member of the project',
-      );
-    const now = new Date();
+    if (!(await this.projectMemberService.isMember(projectId, body.assigneeId)))
+      throw notMember();
+
     const task = new Task({
       projectId,
-      assigneeId,
+      assigneeId: body.assigneeId,
       title: title.trim(),
       description: (description ?? '').trim(),
       priority: taskPriority,
-      status: 'todo',
-      createdAt: now,
-      updatedAt: now,
     }).toEntity();
 
     const createdTask = await this.taskRepository.create(task);
-    return createdTask;
+    return this.#presentOne(createdTask);
   }
 
-  async update({ user, taskId, title, description, priority }) {
-    if (user.role !== 'team_lead') {
-      throw forbidden('Only a team lead can update task in project');
-    }
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
+  async update(user, taskId, body) {
+    const task = await this.#ownerTask(taskId, user);
 
-    const { role } = await this.projectService.getAccess(task.projectId, user.id);
-    if (!role) throw forbidden();
-    if (role !== 'owner') throw forbidden('Only the project owner can update tasks');
-
+    checkBody(body, ['title', 'description', 'priority']);
     const fields = {};
-    if (title !== undefined) {
-      if (typeof title !== 'string' || !title.trim()) {
-        throw badRequest('Task title cannot be empty');
-      }
-      fields.title = title.trim();
+    if (body.title !== undefined)
+      fields.title = str(body.title, 'title', { min: 1, max: 200 });
+    if (body.description !== undefined) {
+      fields.description = str(body.description, 'description', { max: 5000 });
     }
-
-    if (description !== undefined) {
-      if (typeof description !== 'string') {
-        throw badRequest('Invalid task description');
-      }
-      fields.description = description.trim();
-    }
-
-    if (priority !== undefined) {
-      if (typeof priority !== 'string' || !PRIORITIES.includes(priority)) {
-        throw badRequest('Invalid task priority');
-      }
-      fields.priority = priority;
+    if (body.priority !== undefined) {
+      if (!PRIORITIES.includes(body.priority))
+        throw badRequest('priority: LOW, MEDIUM or HIGH');
+      fields.priority = body.priority;
     }
     if (Object.keys(fields).length === 0)
       throw badRequest('At least one field is required');
 
     const updated = await this.taskRepository.update(task.id, fields);
-    if (!updated) throw taskNotFound();
-    return updated;
+    return this.#presentOne(updated);
   }
 
   async listByProject(user, projectId, assignee) {
-    const { exists, role } = await this.projectService.getAccess(projectId, user.id);
-    if (!exists) throw projectNotFound();
+    const role = await this.#projectRole(projectId, user);
     if (!role) throw forbidden();
+
     let assigneeId;
-    if (assignee !== undefined) {
-      if (assignee !== 'me') {
-        throw badRequest('assignee must be "me"');
-      }
-      assigneeId = user.id;
+    if (assignee !== undefined && assignee !== 'me') {
+      throw badRequest('assignee must be "me"');
     }
+    assigneeId = user.id;
     const tasks = await this.taskRepository.findByProject(projectId, assigneeId);
-    return tasks;
+    return this.#present(tasks);
   }
 
   async getById(user, taskId) {
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
-
-    const { role } = await this.projectService.getAccess(task.projectId, user.id);
-    if (!role) throw forbidden();
-    return task;
+    const { task } = await this.#taskWithRole(taskId, user);
+    return this.#presentOne(task);
   }
 
-  async changeStatus(user, taskId, status) {
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
-
-    const { role } = await this.projectService.getAccess(task.projectId, user.id);
-    if (!role) throw forbidden();
-
+  async changeStatus(user, taskId, body) {
+    const { task, role } = await this.#taskWithRole(taskId, user);
     if (role !== 'owner' && task.assigneeId !== user.id) throw forbidden();
 
-    if (typeof status !== 'string' || !STATUSES.includes(status)) {
+    checkBody(body, ['status']);
+    if (!STATUSES.includes(body.status)) {
       throw badRequest('Invalid task status');
     }
 
-    if (status === task.status) return task;
-    if (!(Math.abs(STATUSES.indexOf(task.status) - STATUSES.indexOf(status)) === 1)) {
+    if (body.status === task.status) return task;
+    if (
+      !(Math.abs(STATUSES.indexOf(task.status) - STATUSES.indexOf(body.status)) === 1)
+    ) {
       throw new AppError(
         422,
         'INVALID_STATUS_TRANSITION',
@@ -158,46 +144,36 @@ export class TaskService {
       );
     }
 
-    const updated = await this.taskRepository.updateStatus(task.id, task.status, status);
+    const updated = await this.taskRepository.updateStatus(
+      task.id,
+      task.status,
+      body.status,
+    );
     if (!updated)
       throw new AppError(
         409,
         'CONCURRENT_UPDATE',
         'Task status was changed concurrently',
       );
-    return updated;
+    return this.#presentOne(updated);
   }
 
-  async changeAssignee(user, taskId, assigneeId) {
-    if (!Number.isInteger(assigneeId) || assigneeId <= 0) {
-      throw badRequest('Invalid assignee ID');
-    }
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw taskNotFound();
-    const { role } = await this.projectService.getAccess(task.projectId, user.id);
-    if (!role) throw forbidden();
-    if (role !== 'owner') throw forbidden();
+  async changeAssignee(user, taskId, body) {
+    const task = await this.#ownerTask(taskId, user);
 
+    checkBody(body, ['assigneeId']);
+    const assigneeId = checkId(body.assigneeId, 'assigneeId');
     if (!(await this.projectMemberService.isMember(task.projectId, assigneeId)))
-      throw new AppError(
-        422,
-        'ASSIGNEE_NOT_MEMBER',
-        'Assignee is not a member of the project',
-      );
+      throw notMember();
 
     const updated = await this.taskRepository.update(task.id, {
       assignee_id: assigneeId,
     });
-    if (!updated) throw taskNotFound();
-    return updated;
+    return this.#presentOne(updated);
   }
 
   async remove(user, taskId) {
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw taskNotFound();
-    const { role } = await this.projectService.getAccess(task.projectId, user.id);
-    if (!role) throw forbidden();
-    if (role !== 'owner') throw forbidden();
-    await this.taskRepository.delete(task.id);
+    await this.#ownerTask(taskId, user);
+    await this.taskRepository.delete(taskId);
   }
 }
