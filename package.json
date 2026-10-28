@@ -28,7 +28,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "postinstall": "prisma generate",
-    "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start"
+    "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start",
+    "test:unit": "vitest run tests/unit"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
