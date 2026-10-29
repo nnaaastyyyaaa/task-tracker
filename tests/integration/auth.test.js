@@ -75,7 +75,6 @@ describe('Authentication API', () => {
         payload: user,
       });
 
-      console.log(response);
       let data = await response.json();
 
       expect(response.statusCode).toBe(400);
@@ -311,13 +310,13 @@ describe('Authentication API', () => {
     it('rejects invalid session cookie', async () => {
       const response = await app.inject({
         method: 'GET',
-        url: '/auth/me',
+        url: '/projects',
         headers: {
           cookie: 'sid=invalid-session',
         },
       });
 
-      expect(response.statusCode).toBe(404);
+      expect(response.statusCode).toBe(401);
     });
   });
 
@@ -370,11 +369,11 @@ describe('Authentication API', () => {
 
       const protectedResponse = await app.inject({
         method: 'GET',
-        url: '/auth/me',
+        url: '/projects',
         headers: { cookie },
       });
 
-      expect(protectedResponse.statusCode).toBe(404);
+      expect(protectedResponse.statusCode).toBe(401);
     });
 
     it('clears sid cookie on logout', async () => {
@@ -400,8 +399,6 @@ describe('Authentication API', () => {
         method: 'POST',
         url: '/auth/logout',
       });
-
-      console.log(response);
 
       expect(response.statusCode).toBe(401);
     });

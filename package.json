@@ -16,7 +16,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:integration",
     "lint": "eslint . --ext .js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
