@@ -29,10 +29,12 @@
     "db:migrate": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start",
-    "test:unit": "vitest run tests/unit"
+    "test:unit": "vitest run tests/unit",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",

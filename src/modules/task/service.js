@@ -77,7 +77,7 @@ export class TaskService {
       projectId,
       assigneeId: body.assigneeId,
       title: title.trim(),
-      description: (description ?? '').trim(),
+      description: description,
       priority: taskPriority,
     }).toEntity();
 

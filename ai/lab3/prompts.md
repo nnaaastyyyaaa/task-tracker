@@ -164,4 +164,20 @@
 напиши далі тести для project і member
 тут не треба тестувати 100% логіки, протестуй лише надважливу
 
+## User:
+
+> 10/29/2026 13:47:56
+
+> File: controller_eb92df.js
+
+> File: entity_da5ecf.js
+
+> File: repository_133cea.js
+
+> File: service_79722c.js
+
+> File: taskRoutes.js
+
+тести працюють, тепер треба  юніт тести для модуля task, саме цей модуль потрібно пкрити тестами на 100%, тести просто пиши, не запускай, запускати перевірчти буду я сама
+
 Powered by Claude Exporter (https://www.ai-chat-exporter.net)
