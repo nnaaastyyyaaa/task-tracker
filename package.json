@@ -27,9 +27,12 @@
     "db:up": "docker compose up -d db",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
+    "db:test:up": "docker compose up -d db_test --wait",
+    "db:test:down": "docker compose db_test down",
     "postinstall": "prisma generate",
     "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start",
     "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run --config vitest.integration.config.js",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
