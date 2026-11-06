@@ -14,10 +14,18 @@ export class ProjectController {
     return this.sendResponse(reply, project, 201);
   };
 
-  list = async (request) => this.projectService.list(request.user);
+  list = async (request, reply) => {
+    const list = await this.projectService.list(request.user);
+    return this.sendResponse(reply, list, 200);
+  };
 
-  getOne = async (request) =>
-    this.projectService.getById(request.user, parseId(request.params.projectId));
+  getOne = async (request, reply) => {
+    const project = await this.projectService.getById(
+      request.user,
+      parseId(request.params.projectId),
+    );
+    return this.sendResponse(reply, project, 200);
+  };
 
   addMember = async (request, reply) => {
     const members = await this.projectService.addMember(

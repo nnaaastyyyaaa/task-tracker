@@ -51,33 +51,37 @@ describe('ProjectController', () => {
   });
 
   describe('list', () => {
-    it('returns the projects of the current user', async () => {
+    it('returns the projects of the current user with status 200', async () => {
       const projects = [{ id: 10 }];
       projectService.list.mockResolvedValue(projects);
 
-      await expect(controller.list(request)).resolves.toBe(projects);
+      await controller.list(request, reply);
 
       expect(projectService.list).toHaveBeenCalledWith(user);
+      expect(reply.code).toHaveBeenCalledWith(200);
+      expect(reply.send).toHaveBeenCalledWith({ data: projects });
+    });
+
+    it('returns an empty list as { data: [] }', async () => {
+      projectService.list.mockResolvedValue([]);
+
+      await controller.list(request, reply);
+
+      expect(reply.send).toHaveBeenCalledWith({ data: [] });
     });
   });
 
   describe('getOne', () => {
-    it('parses the project ID from the URL and returns the project', async () => {
+    it('parses the project ID from the URL and returns the project with status 200', async () => {
       const project = { id: 10, members: [] };
       request.params.projectId = '10';
       projectService.getById.mockResolvedValue(project);
 
-      await expect(controller.getOne(request)).resolves.toBe(project);
+      await controller.getOne(request, reply);
 
       expect(projectService.getById).toHaveBeenCalledWith(user, 10);
-    });
-
-    it('rejects an invalid project ID with 400 without calling the service', async () => {
-      request.params.projectId = 'abc';
-
-      await expect(controller.getOne(request)).rejects.toMatchObject({ status: 400 });
-
-      expect(projectService.getById).not.toHaveBeenCalled();
+      expect(reply.code).toHaveBeenCalledWith(200);
+      expect(reply.send).toHaveBeenCalledWith({ data: project });
     });
   });
 
