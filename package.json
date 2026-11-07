@@ -33,7 +33,8 @@
     "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run --config vitest.integration.config.js",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.config.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
