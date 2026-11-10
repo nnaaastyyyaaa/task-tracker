@@ -16,7 +16,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "lint": "eslint . --ext .js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -27,11 +27,21 @@
     "db:up": "docker compose up -d db",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
+    "db:test:up": "docker compose up -d db_test --wait",
+    "db:test:down": "docker compose db_test down",
     "postinstall": "prisma generate",
-    "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start"
+    "app:start": "npm install && npm run db:up && npm run db:migrate && npm run check && npm start",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run --config vitest.integration.config.js",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "vitest run --config vitest.e2e.config.js",
+    "test:mutation": "stryker run"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",

@@ -78,7 +78,10 @@ export class UserService {
       await this.sessionRepository.delete(prevSid.id);
     }
     const sid = await this.sessionRepository.create(user.id, SESSION_TTL);
-    return { sid, user };
+    return {
+      sid,
+      user: new User(user).toPublic(),
+    };
   }
 
   async logout(sid) {

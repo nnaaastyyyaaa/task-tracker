@@ -1,6 +1,6 @@
 import { AppError } from './errorHandler.js';
 
-const MAX_INT = 2147483647;
+export const MAX_INT = 2147483647;
 
 export const badRequest = (message) => new AppError(400, 'VALIDATION_ERROR', message);
 
