@@ -237,4 +237,97 @@ describe('CustomHandler', () => {
       },
     });
   });
+
+  function getErrorHandler() {
+    const fastify = createFastifyMock();
+
+    CustomHandler(fastify);
+
+    return fastify.setErrorHandler.mock.calls[0][0];
+  }
+
+  it('return 400 VALIDATION_ERROR for statusCode 400 without validation field', () => {
+    const errorHandler = getErrorHandler();
+
+    const error = {
+      statusCode: 400,
+      message: 'Bad input',
+    };
+
+    const reply = {
+      code: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+    };
+
+    errorHandler(error, { log: { error: vi.fn() } }, reply);
+
+    expect(reply.code).toHaveBeenCalledWith(400);
+    expect(reply.send).toHaveBeenCalledWith({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Bad input',
+      },
+    });
+  });
+
+  it.each([401, 404, 418, 499])(
+    'keep statusCode %i and return BAD_REQUEST for other client errors',
+    (statusCode) => {
+      const errorHandler = getErrorHandler();
+
+      const error = {
+        statusCode,
+        message: 'Client mistake',
+      };
+
+      const reply = {
+        code: vi.fn().mockReturnThis(),
+        send: vi.fn().mockReturnThis(),
+      };
+
+      errorHandler(error, { log: { error: vi.fn() } }, reply);
+
+      expect(reply.code).toHaveBeenCalledWith(statusCode);
+      expect(reply.send).toHaveBeenCalledWith({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Client mistake',
+        },
+      });
+    },
+  );
+
+  it.each([500, 501, 502, 599])(
+    'return 500 INTERNAL_ERROR without leaking details for statusCode %i',
+    (statusCode) => {
+      const errorHandler = getErrorHandler();
+
+      const error = {
+        statusCode,
+        message: 'Secret internal details',
+      };
+
+      const request = {
+        log: { error: vi.fn() },
+      };
+
+      const reply = {
+        code: vi.fn().mockReturnThis(),
+        status: vi.fn().mockReturnThis(),
+        send: vi.fn().mockReturnThis(),
+      };
+
+      errorHandler(error, request, reply);
+
+      expect(request.log.error).toHaveBeenCalledWith(error);
+      expect(reply.code).not.toHaveBeenCalled();
+      expect(reply.status).toHaveBeenCalledWith(500);
+      expect(reply.send).toHaveBeenCalledWith({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Something went wrong',
+        },
+      });
+    },
+  );
 });

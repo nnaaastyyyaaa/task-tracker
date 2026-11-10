@@ -175,6 +175,19 @@ describe('UserService', () => {
         service.register({ ...validRegisterBody, ...overrides }),
       ).resolves.toEqual(publicUser);
     });
+
+    it.each(['admin', '', null, 'TEAM_LEAD'])(
+      'rejects the role %j with 400 VALIDATION_ERROR before touching the database',
+      async (role) => {
+        await expect(
+          service.register({ ...validRegisterBody, role }),
+        ).rejects.toMatchObject({ status: 400, code: 'VALIDATION_ERROR' });
+
+        expect(userRepository.findByEmail).not.toHaveBeenCalled();
+        expect(userRepository.create).not.toHaveBeenCalled();
+        expect(bcrypt.hash).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('login', () => {

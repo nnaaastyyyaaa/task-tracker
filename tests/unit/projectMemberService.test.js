@@ -108,5 +108,16 @@ describe('ProjectMemberService', () => {
         code: 'ALREADY_MEMBER',
       });
     });
+
+    it.each(['admin', '', null, 'OWNER'])(
+      'rejects the role %j with 400 VALIDATION_ERROR without touching the repository',
+      async (role) => {
+        await expect(
+          service.add({ projectId: 10, userId: 5, role }),
+        ).rejects.toMatchObject({ status: 400, code: 'VALIDATION_ERROR' });
+
+        expect(projectMemberRepository.add).not.toHaveBeenCalled();
+      },
+    );
   });
 });
